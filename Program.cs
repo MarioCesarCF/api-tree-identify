@@ -12,11 +12,20 @@ var builder = WebApplication.CreateBuilder(args);
 Env.Load();
 
 // ----------------------------- CONFIGURAÇÃO DO BANCO -------------------------
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-connectionString = Environment.ExpandEnvironmentVariables(connectionString);
+var host = Environment.GetEnvironmentVariable("DB_HOST");
+var db = Environment.GetEnvironmentVariable("DB_NAME");
+var user = Environment.GetEnvironmentVariable("DB_USER");
+var pass = Environment.GetEnvironmentVariable("DB_PASSWORD");
+var port = Environment.GetEnvironmentVariable("DB_PORT") ?? "5432";
+
+var connectionString = $"Host={host};Database={db};Username={user};Password={pass};Port={port};SSL Mode=Require;Trust Server Certificate=True";
+
 
 builder.Services.AddDbContext<TreeDbContext>(options =>
  options.UseNpgsql(connectionString));
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -24,6 +33,16 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 });
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.DocumentTitle = "SWIA API - Árvores";
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "SWIA API v1");
+    });
+}
 
 // ----------------------------- ENDPOINT /IDENTIFY ----------------------------
 app.MapPost("/identify", async (Tree request, TreeDbContext db) =>
@@ -87,6 +106,11 @@ app.MapPost("/identify", async (Tree request, TreeDbContext db) =>
     .OrderByDescending(r => r.Score);
 
     return Results.Ok(weightedResults);
+});
+
+app.MapGet("/identify", async () =>
+{    
+    return Results.Ok("API conectada com sucesso!");
 });
 
 
