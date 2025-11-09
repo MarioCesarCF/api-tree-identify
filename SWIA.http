@@ -1,0 +1,6 @@
+@SWIA_HostAddress = http://localhost:5027
+
+GET {{SWIA_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
